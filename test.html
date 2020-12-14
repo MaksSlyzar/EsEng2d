@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const ctx = canvas.getContext('2d');
+        const t = { x: 0, y: 0, w: 50, h: 50}
+        function Update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            t.x += 1;
+            ctx.fillRect(t.x, t.y, t.w, t.h);
+            requestAnimationFrame(Update, 30);
+        }
+        canvas.width = window.innerWidth;
+    </script>
+</body>
+</html>
