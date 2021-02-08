@@ -2,10 +2,15 @@ class Engine {
     constructor () {
         this.updates = [];
         this.keydowns = [];
-
+        this.clickFunctions = [];
         this.events();
 
-        this.updateInterval = setInterval( () => { this.updatePrivate(this.ctx, { updates: this.updates, keydowns: this.keydowns}, { keyboardKeys: this.keyboardKeys }) }, 1);
+        let self = this;
+
+        this.updateInterval = setInterval( () => { 
+            this.updatePrivate( self )}, 1);
+        
+        document.onclick = (e) => { this.onClickPrivate(e) }
     }
 
     events() {
@@ -25,22 +30,51 @@ class Engine {
         this.canvas = canvas;
     }
 
-    updatePrivate(ctx, functions, dep) {
-        if (this.ctx) {
+    updatePrivate(self) {
+        if (self.ctx) {
+
             //Clear canvas
-            this.ctx.fillStyle = 'black';
-            this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+            self.ctx.fillStyle = 'black';
+            self.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             //Run update functions
-            for (let func_ind in functions.updates) {
-                functions.updates[func_ind]();
+            for (let func_ind in self.updates) {
+                self.updates[func_ind]();
             }
 
             //Run keydown functions
-            for (let func_ind in functions.keydowns) {
-                functions.keydowns[func_ind](dep.keyboardKeys);
+            for (let func_ind in self.keydowns) {
+                self.keydowns[func_ind](self.keyboardKeys);
+            }
+            
+            //Draw objects
+            if (self.scene){
+                for (let obj_ind in self.scene.objects) {
+                    //self.scene.objects[obj_ind].draw(self.ctx);
+                    DrawObject(null, self.scene.objects[obj_ind], self);
+
+                    function DrawObject(prev, object, self) {
+                        if (prev) {
+                            object.GlobalX = prev.GlobalX + object.x;
+                            object.GlobalY = prev.GlobalY + object.y;
+                        }else {
+                            object.GlobalX = object.x;
+                            object.GlobalY = object.y;
+                        }
+
+                        object.draw(self.ctx);
+                        
+                        for (let i in object.objects) {
+                            DrawObject(object, object.objects[i], self);
+                        }
+                    }
+                }
             }
         }
+    }
+
+    scene(object) {
+        this.scene = object;
     }
 
     onkeydown(func) {
@@ -51,18 +85,19 @@ class Engine {
         this.updates.push(func);
     }
 
-    draw(object) {
-        if (object.type == 'RectObject') {
-            this.ctx.fillStyle = object.color;
-            this.ctx.fillRect(object.x, object.y, object.width, object.height);
-        }
+    onClickObject(object, func) {
+        
+        this.clickFunctions.push({ object: object, func: func });
     }
 
-    onClickObject(object, func) {
-        func();
-        document.onclick = (e) => {
-            if (e.clientX >= object.x && e.clientX <= object.x + object.width) {
-                if (e.clientY >= object.y && e.clientY <= object.y + object.height) {
+    onClickPrivate(e) {
+        console.log(this.clickFunctions)
+        for (let i in this.clickFunctions) {
+            let object = this.clickFunctions[i].object;
+            let func = this.clickFunctions[i].func;
+
+            if (e.clientX >= object.GlobalX && e.clientX <= object.GlobalX + object.width) {
+                if (e.clientY >= object.GlobalY && e.clientY <= object.GlobalY + object.height) {
                     func();
                 }
             }
